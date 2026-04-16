@@ -311,7 +311,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                       "Save",
                       () => _callApi("save_map", "MAP SAVED"),
                     ),
-                    _buildControlButton(Icons.home, "POI", () async {
+                    _buildControlButton(Icons.navigation, "POI", () async {
                       var data = await ApiServices.currentValue();
 
                       if (data['success'] == true) {
@@ -502,29 +502,124 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                         },
                       );
                     }),
-                    _buildControlButton(Icons.navigation, "POI list", () async {
-                      await Get.find<PoiController>().PoiDataz(); // load first
-                      showPoiManagerDialog(context);
-                    }),
                     _buildControlButton(
-                      Icons.location_searching,
-                      "Localizing",
-                      () {},
+                      Icons.navigation_outlined,
+                      "POI list",
+                      () async {
+                        await Get.find<PoiController>()
+                            .PoiDataz(); // load first
+                        showPoiManagerDialog(context);
+                      },
                     ),
-                    _buildControlButton(Icons.map, "Mapping", () {}),
 
                     const Divider(color: Colors.white24, thickness: 2),
+                    //
+                    _buildSectionLabel("EMERGENCY"),
 
-                    _buildControlButton(Icons.delete, "Clear", () {}),
-                    _buildControlButton(Icons.restore, "Recover", () {}),
-                    _buildControlButton(Icons.place, "POI", () {}),
-
-                    const Divider(color: Colors.white24, thickness: 2),
-
-                    _buildControlButton(Icons.border_outer, "Walls", () {}),
-                    _buildControlButton(Icons.timeline, "Tracks", () {}),
-                    _buildControlButton(Icons.crop_square, "Areas", () {}),
-                    _buildControlButton(Icons.edit, "Edit", () {}),
+                    _buildControlButton(Icons.warning_amber, "Alert", () async {
+                      final resp = await ApiServices.emergency(name: true);
+                      if (resp['success'] == true) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 20,
+                            ),
+                            content: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Emergency Button Pressed",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                        Get.find<PoiController>().PoiDataz();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 20,
+                            ),
+                            content: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error, color: Colors.white),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Error",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    }),
+                    // _buildControlButton(Icons.restore, "Recover", () {}),
+                    // _buildControlButton(Icons.place, "POI", () {}),
+                    //
+                    // const Divider(color: Colors.white24, thickness: 2),
+                    //
+                    // _buildControlButton(Icons.border_outer, "Walls", () {}),
+                    // _buildControlButton(Icons.timeline, "Tracks", () {}),
+                    // _buildControlButton(Icons.crop_square, "Areas", () {}),
+                    // _buildControlButton(Icons.edit, "Edit", () {}),
                   ],
                 ),
               ),
@@ -680,9 +775,29 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                           value: data?.mapReady ?? false,
                         ),
                         _statusRow(
-                          color: Colors.amberAccent,
+                          color: Colors.blueAccent,
                           label: "Map Active",
                           value: data?.mappingActive ?? false,
+                        ),
+                        _statusRow2(
+                          color: Colors.lightGreen,
+                          label: "Navigation State",
+                          value: data?.navState ?? "No Data",
+                        ),
+                        _statusRow2(
+                          color: Colors.purple,
+                          label: "Work Flow Mode",
+                          value: data?.workflowMode ?? "No Data",
+                        ),
+                        _statusRow2(
+                          color: Colors.teal,
+                          label: "Work Flow Running",
+                          value: data?.workflowRunning ?? "No Data",
+                        ),
+                        _statusRow2(
+                          color: Colors.cyan,
+                          label: "Work Flow Status",
+                          value: data?.workflowStatus ?? "No Data",
                         ),
                       ],
                     ),
@@ -697,8 +812,22 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                           label: "Goal Reached",
                           value: data?.goalReached ?? false,
                         ),
-                        // _statusRow2(color: Colors.amberAccent, label: "Goal",
-                        //     value: data?.goal ?? 0),
+                        _statusRow3(
+                          color: Colors.orangeAccent,
+                          label: "Distance Travelled",
+                          value: data?.distanceTraveled ?? 0,
+                        ),
+                        _statusRow3(
+                          color: Colors.purpleAccent,
+                          label: "Goal Distance",
+                          value: data?.goalDistance ?? 0,
+                        ),
+   _statusRow3(
+                          color: Colors.purpleAccent,
+                          label: "Goal Distance",
+                          value: data?.goalDistance ?? 0,
+                        ),
+
                         // _statusRow2(color: Colors.amberAccent, label: "Goal Dist",
                         //     value: data?.goalDistance ?? 0),
                         // _statusRow2(color: Colors.amberAccent, label: "Path Points",
@@ -930,6 +1059,73 @@ Widget _statusRow({
 }
 
 Widget _statusRow2({
+  required Color color,
+  required String label,
+  required String value,
+  bool isModeBadge = false,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: color.withOpacity(0.5), blurRadius: 4),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.65),
+            ),
+          ),
+        ),
+        if (isModeBadge)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent.withOpacity(0.15),
+              border: Border.all(
+                color: Colors.blueAccent.withOpacity(0.35),
+                width: 0.5,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                color: Colors.lightBlueAccent,
+                letterSpacing: 0.5,
+              ),
+            ),
+          )
+        else
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+              color: Colors.lightBlueAccent,
+              letterSpacing: 0.5,
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+Widget _statusRow3({
   required Color color,
   required String label,
   required double value,
@@ -1403,51 +1599,228 @@ void _showEditDialog(BuildContext context, Pois p, PoiController ctrl) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      title: const Text("Edit POI"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: name,
-            decoration: const InputDecoration(labelText: "Name"),
-          ),
-          TextField(
-            controller: x,
-            decoration: const InputDecoration(labelText: "X"),
-            keyboardType: TextInputType.number,
-          ),
-          TextField(
-            controller: y,
-            decoration: const InputDecoration(labelText: "Y"),
-            keyboardType: TextInputType.number,
-          ),
-          TextField(
-            controller: yaw,
-            decoration: const InputDecoration(labelText: "Yaw"),
-            keyboardType: TextInputType.number,
-          ),
-        ],
+      title: const Text("EDIT POI", style: TextStyle(fontSize: 15)),
+      content: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom, // ✅ keyboard safe
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: "Name",
+                hintText: "Enter name",
+                prefixIcon: const Icon(Icons.person_outline),
+
+                filled: true,
+                fillColor: Colors.grey.shade100,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                ),
+
+                labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: x,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: "X",
+                hintText: "Enter X",
+                prefixIcon: const Icon(Icons.person_outline),
+
+                filled: true,
+                fillColor: Colors.grey.shade100,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                ),
+
+                labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+            SizedBox(height: 10),
+
+            TextField(
+              controller: y,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: "Y",
+                hintText: "Enter Y",
+                prefixIcon: const Icon(Icons.person_outline),
+
+                filled: true,
+                fillColor: Colors.grey.shade100,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                ),
+
+                labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+            SizedBox(height: 10),
+
+            TextField(
+              controller: y,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              decoration: InputDecoration(
+                labelText: "yaw",
+                hintText: "Enter yaw",
+                prefixIcon: const Icon(Icons.person_outline),
+
+                filled: true,
+                fillColor: Colors.grey.shade100,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                ),
+
+                labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            editdata(
-              name.text,
-              double.tryParse(x.text) ?? 0.0,
-              double.tryParse(y.text) ?? 0.0,
-              double.tryParse(yaw.text) ?? 0.0,
-              p.id ?? 0,
-              // id
-              "Map Updated Successfully",
-              // success message
-              context, // context (IMPORTANT)
-            );
-          },
-          child: Text("Update"),
+        Row(
+          children: [
+            // ❌ CLOSE BUTTON (Modern Outline)
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: Colors.grey),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Close",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // ✅ SUBMIT BUTTON (Gradient + Elevation)
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: EdgeInsets.zero,
+                ),
+                onPressed: () {
+                  editdata(
+                    name.text,
+                    double.tryParse(x.text) ?? 0.0,
+                    double.tryParse(y.text) ?? 0.0,
+                    double.tryParse(yaw.text) ?? 0.0,
+                    p.id ?? 0,
+                    // id
+                    "Map Updated Successfully",
+                    // success message
+                    context, // context (IMPORTANT)
+                  );
+                },
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4FACFE), Color(0xFF00F2FE)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Container(
+                    alignment: Alignment.center,
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: const Text(
+                      "Update",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -1479,7 +1852,7 @@ Future<void> editdata(
         color: Colors.green,
         icon: Icons.check_circle,
       );
-
+      Navigator.of(context).pop();
       Get.find<PoiController>().PoiDataz();
     } else {
       _showSnackBar(

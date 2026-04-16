@@ -14,13 +14,13 @@ class RobotStatusController extends GetxController {
   Rx<robotDetailsModel?> robotMapData = Rx(null);
 
   Future<void> robotMapDataz() async {
-    AppLogger.log("-----benebebn");
+    AppLogger.log("-----robotMapDataz");
 
     isLoading.value = true;
     isLoaded.value = false;
     try {
       Map<String, dynamic> resp = await ApiServices.robotdetails();
-      AppLogger.log("----quotes---$resp");
+      AppLogger.log("----robotMapDataz---$resp");
       if (resp['success'] == true) {
       robotMapData.value = robotDetailsModel.fromJson(resp);
       AppLogger.log("Nav State: ${robotMapData.value?.navState}");
@@ -35,6 +35,7 @@ class RobotStatusController extends GetxController {
       }
     } catch (e) {
       isLoaded.value = false;
+      AppLogger.log("Yaw: $e");
 
       ///popup
       ///

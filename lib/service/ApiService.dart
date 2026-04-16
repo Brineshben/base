@@ -100,6 +100,26 @@ class ApiServices {
 
 
   ///add POi
+  static Future<Map<String, dynamic>> emergency({required bool name}) async {
+    String url = "${ApiConstants.baseURL}${ApiConstants.emergency}";
+    print("Url....$url");
+    Map apiBody = {"value": name,};
+    try {
+      var request = http.Request('POST', Uri.parse(url));
+      request.body = (json.encode(apiBody));
+      request.headers.addAll({'Content-Type': 'application/json'});
+      http.StreamedResponse response = await request.send();
+
+      var respString = await response.stream.bytesToString();
+      print("Url....$respString");
+      return json.decode(respString);
+    } catch (e) {
+      throw Exception("Service Error Login Api");
+    }
+  }
+
+
+  ///add POi
   static Future<Map<String, dynamic>> addPoi({required String name,required double x,required double y,required double yaw,}) async {
     String url = "${ApiConstants.baseURL}${ApiConstants.poiList}";
     print("Url....$url");

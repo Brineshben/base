@@ -11,4 +11,5 @@ class ApiConstants {
   static String robotDetails = "/telemetry";
   static String poiList = "/pois";
   static String currentValue = "/current_pose";
+  static String emergency = "/emergency_stop";
 }
