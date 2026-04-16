@@ -21,7 +21,7 @@ class RobotStatusController extends GetxController {
     try {
       Map<String, dynamic> resp = await ApiServices.robotdetails();
       AppLogger.log("----quotes---$resp");
-      // if (resp['status'] == 200) {
+      if (resp['success'] == true) {
       robotMapData.value = robotDetailsModel.fromJson(resp);
       AppLogger.log("Nav State: ${robotMapData.value?.navState}");
       AppLogger.log("Distance: ${robotMapData.value?.distanceTraveled}");
@@ -30,9 +30,9 @@ class RobotStatusController extends GetxController {
       AppLogger.log("Yaw: ${robotMapData.value?.robotPose?.yawDeg}");
         isLoading.value = true;
 
-      // } else {
-      //   isError.value = true;
-      // }
+      } else {
+        isError.value = true;
+      }
     } catch (e) {
       isLoaded.value = false;
 

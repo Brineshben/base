@@ -7,8 +7,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../service/ApiService.dart';
 import '../maplistpage/maplistpage.dart';
 import '../settingspage/settingspage.dart';
+import 'Controller/poiController.dart';
 import 'Controller/robotDetailsController.dart';
-
+import 'Model/poiModel.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
@@ -19,8 +20,6 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
-
-
 
   final List<Widget> _pages = const [
     CameraStreamPage(),
@@ -42,9 +41,15 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.devices), label: 'Devices'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.devices),
+              label: 'Devices',
+            ),
             BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Maps'),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
           ],
         ),
       ),
@@ -70,10 +75,15 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
   bool _hasError = false;
   Timer? messageTimer2;
 
-  final TransformationController _transformationController = TransformationController();
+  final TransformationController _transformationController =
+      TransformationController();
   final double _battery = 74;
   final double _cpu = 43;
   final double _ram = 61;
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController xController = TextEditingController();
+  final TextEditingController yController = TextEditingController();
+  final TextEditingController yawController = TextEditingController();
 
   @override
   void initState() {
@@ -92,10 +102,13 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
   // }
   @override
   void dispose() {
-    _webViewController.loadRequest(Uri.parse('about:blank')); // release WebView memory
+    _webViewController.loadRequest(
+      Uri.parse('about:blank'),
+    ); // release WebView memory
     _transformationController.dispose();
     super.dispose();
   }
+
   void _initWebView() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -121,7 +134,6 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
 
   // SNACKBAR HELPER
 
-
   void _showSnack(bool success, String successMsg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -134,16 +146,29 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
           decoration: BoxDecoration(
             color: success ? Colors.green : Colors.red,
             borderRadius: BorderRadius.circular(14),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              Icon(success ? Icons.check_circle : Icons.error, color: Colors.white),
+              Icon(
+                success ? Icons.check_circle : Icons.error,
+                color: Colors.white,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   success ? successMsg : "ERROR",
-                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -177,8 +202,10 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
               child: Icon(icon, color: Colors.white, size: 25),
             ),
             const SizedBox(height: 4),
-            Text(label.toUpperCase(),
-                style: const TextStyle(color: Colors.white, fontSize: 9)),
+            Text(
+              label.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontSize: 9),
+            ),
           ],
         ),
       ),
@@ -188,11 +215,17 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
   Widget _buildSectionLabel(String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(label.toUpperCase(),
-          style: const TextStyle(
-              color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
+
   // RIGHT CONTROL PANEL
 
   Widget _buildControlPanel() {
@@ -212,7 +245,9 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
               height: 60,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.75),
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(12),
+                ),
               ),
               child: Icon(
                 isExpanded ? Icons.chevron_right : Icons.chevron_left,
@@ -231,30 +266,251 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
             clipBehavior: Clip.hardEdge,
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 4,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildSectionLabel("Navigations"),
-                    _buildControlButton(Icons.play_circle_outlined, "Start Mapping",
-                            () => _callApi("start_mapping", "MAPPING STARTED")),
-                    _buildControlButton(Icons.stop_circle, "Stop Mapping",
-                            () => _callApi("stop_mapping", "MAPPING STOPPED")),
-                    _buildControlButton(Icons.location_on_outlined, "Map Navigate",
-                            () => _callApi("start_mapping_navigation", "MAP NAVIGATION STARTED")),
-                    _buildControlButton(Icons.save, "Nav Stack",
-                            () => _callApi("start_nav_stack", "NAV STACK STARTED")),
+                    _buildControlButton(
+                      Icons.play_circle_outlined,
+                      "Start Mapping",
+                      () => _callApi("start_mapping", "MAPPING STARTED"),
+                    ),
+                    _buildControlButton(
+                      Icons.stop_circle,
+                      "Stop Mapping",
+                      () => _callApi("stop_mapping", "MAPPING STOPPED"),
+                    ),
+                    _buildControlButton(
+                      Icons.location_on_outlined,
+                      "Map Navigate",
+                      () => _callApi(
+                        "start_mapping_navigation",
+                        "MAP NAVIGATION STARTED",
+                      ),
+                    ),
+                    _buildControlButton(
+                      Icons.save,
+                      "Nav Stack",
+                      () => _callApi("start_nav_stack", "NAV STACK STARTED"),
+                    ),
 
                     const Divider(color: Colors.white24, thickness: 2),
                     _buildSectionLabel("Mapping"),
 
-                    _buildControlButton(Icons.stop, "Stop All",
-                            () => _callApi("stop_all", "ALL NAVIGATION STOPPED")),
-                    _buildControlButton(Icons.save, "Save",
-                            () => _callApi("save_map", "MAP SAVED")),
-                    _buildControlButton(Icons.home, "Home", () {}),
-                    _buildControlButton(Icons.navigation, "Move To", () {}),
-                    _buildControlButton(Icons.location_searching, "Localizing", () {}),
+                    _buildControlButton(
+                      Icons.stop,
+                      "Stop All",
+                      () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
+                    ),
+                    _buildControlButton(
+                      Icons.save,
+                      "Save",
+                      () => _callApi("save_map", "MAP SAVED"),
+                    ),
+                    _buildControlButton(Icons.home, "POI", () async {
+                      var data = await ApiServices.currentValue();
+
+                      if (data['success'] == true) {
+                        var pose = data['pose'];
+
+                        xController.text = pose['x'].toString();
+                        yController.text = pose['y'].toString();
+                        yawController.text = pose['yaw_deg'].toString();
+                      }
+
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return Dialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            backgroundColor: Colors.transparent,
+                            child: SingleChildScrollView(
+                              padding: EdgeInsets.only(
+                                bottom: MediaQuery.of(
+                                  context,
+                                ).viewInsets.bottom, // ✅ keyboard safe
+                              ),
+                              child: Container(
+                                width: 500,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // HEADER
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "ADD POI",
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 18),
+
+                                    // FIELDS
+                                    _styledField(
+                                      nameController,
+                                      "Name",
+                                      Icons.person,
+                                    ),
+                                    _styledField(
+                                      xController,
+                                      "X Coordinate",
+                                      Icons.location_on,
+                                      enabled: false,
+                                    ),
+                                    _styledField(
+                                      yController,
+                                      "Y Coordinate",
+                                      Icons.location_on_outlined,
+                                      enabled: false,
+                                    ),
+                                    _styledField(
+                                      yawController,
+                                      "Yaw Coordinate",
+                                      Icons.rotate_right,
+                                      enabled: false,
+                                    ),
+
+                                    const SizedBox(height: 20),
+
+                                    // BUTTONS
+                                    Row(
+                                      children: [
+                                        // ❌ CLOSE BUTTON (Modern Outline)
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 14,
+                                                  ),
+                                              side: const BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text(
+                                              "Close",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+
+                                        // ✅ SUBMIT BUTTON (Gradient + Elevation)
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            style:
+                                                ElevatedButton.styleFrom(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 14,
+                                                      ),
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  shadowColor: Colors.black26,
+                                                  elevation: 6,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ).copyWith(
+                                                  backgroundColor:
+                                                      MaterialStateProperty.resolveWith(
+                                                        (states) => null,
+                                                      ),
+                                                ),
+                                            onPressed: () {
+                                              submitData(
+                                                nameController.text,
+                                                double.tryParse(
+                                                      xController.text,
+                                                    ) ??
+                                                    0.0,
+                                                double.tryParse(
+                                                      yController.text,
+                                                    ) ??
+                                                    0.0,
+                                                double.tryParse(
+                                                      yawController.text,
+                                                    ) ??
+                                                    0.0,
+                                                "POI ADDED",
+                                              );
+                                            },
+                                            child: Ink(
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF4FACFE),
+                                                    Color(0xFF00F2FE),
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Container(
+                                                alignment: Alignment.center,
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minHeight: 48,
+                                                    ),
+                                                child: const Text(
+                                                  "Submit",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                    _buildControlButton(Icons.navigation, "POI list", () async {
+                      await Get.find<PoiController>().PoiDataz(); // load first
+                      showPoiManagerDialog(context);
+                    }),
+                    _buildControlButton(
+                      Icons.location_searching,
+                      "Localizing",
+                      () {},
+                    ),
                     _buildControlButton(Icons.map, "Mapping", () {}),
 
                     const Divider(color: Colors.white24, thickness: 2),
@@ -278,6 +534,100 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
       ),
     );
   }
+
+  Widget _styledField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool enabled = true,
+  }) {
+    final isName = label == "Name";
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+
+        // 👈 important
+        keyboardType: isName
+            ? TextInputType.name
+            : const TextInputType.numberWithOptions(decimal: true),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+
+          // 🔹 ICON STYLE
+          prefixIcon: Icon(icon, color: Colors.blueAccent, size: 20),
+
+          // 🔹 BACKGROUND
+          filled: true,
+          fillColor: const Color(0xFFF5F7FA),
+
+          // 🔹 PADDING
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
+
+          // 🔹 BORDER (DEFAULT)
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+
+          // 🔹 NORMAL BORDER
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+
+          // 🔹 FOCUSED BORDER (IMPORTANT)
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
+          ),
+
+          // 🔹 HINT STYLE
+          hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+
+  Future<void> submitData(
+    String name,
+    double x,
+    double y,
+    double yaw,
+    String successMsg,
+  ) async {
+    final resp = await ApiServices.addPoi(name: name, x: x, y: y, yaw: yaw);
+    _showSnack(resp['success'] == true, successMsg);
+
+    if (resp['success'] == true) {
+      nameController.clear();
+      xController.clear();
+      yController.clear();
+      yawController.clear();
+
+      Navigator.pop(context);
+    }
+  }
+
+  // Future<void> submitData(
+  //   String name,
+  //   double x,
+  //   double y,
+  //   double yaw,
+  //   String successMsg,
+  // ) async {
+  //   final resp = await ApiServices.addPoi(name: name, x: x, y: y, yaw: yaw);
+  //   _showSnack(resp['success'] == true, successMsg);
+  //   nameController.value.clear();
+  //   Navigator.pop(context);
+  // }
 
   //  LEFT STATUS PANEL
 
@@ -307,7 +657,6 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     child: Column(
                       children: [
                         _barRow("Battery", _battery / 100, Colors.greenAccent),
-
                       ],
                     ),
                   ),
@@ -316,16 +665,25 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     child: Column(
                       children: [
                         const SizedBox(height: 4),
-                        _statusRow(color: Colors.greenAccent, label: "Emergency Stop",
-                            value: data?.emergencyStopActive ?? false),
-                        _statusRow2(color: Colors.blueAccent, label: "Distance Travelled",
-                            value: data?.distanceTraveled ?? 0, isModeBadge: true),
+                        _statusRow(
+                          color: Colors.greenAccent,
+                          label: "Emergency Stop",
+                          value: data?.emergencyStopActive ?? false,
+                        ),
+                        // _statusRow2(color: Colors.blueAccent, label: "Distance Travelled",
+                        //     value: data?.distanceTraveled ?? 0, isModeBadge: true),
                         // _statusRow(color: Colors.amberAccent, label: "Localized",
                         //     value: data?.l ?? false),
-                        _statusRow(color: Colors.amberAccent, label: "Map Ready",
-                            value: data?.mapReady ?? false),
-                        _statusRow(color: Colors.amberAccent, label: "Map Active",
-                            value: data?.mappingActive ?? false),
+                        _statusRow(
+                          color: Colors.amberAccent,
+                          label: "Map Ready",
+                          value: data?.mapReady ?? false,
+                        ),
+                        _statusRow(
+                          color: Colors.amberAccent,
+                          label: "Map Active",
+                          value: data?.mappingActive ?? false,
+                        ),
                       ],
                     ),
                   ),
@@ -334,12 +692,15 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     title: "NAVIGATION",
                     child: Column(
                       children: [
-                        _statusRow(color: Colors.amberAccent, label: "Goal Reached",
-                            value: data?.goalReached ?? false),
-                        _statusRow2(color: Colors.amberAccent, label: "Goal",
-                            value: data?.goal ?? 0),
-                        _statusRow2(color: Colors.amberAccent, label: "Goal Dist",
-                            value: data?.goalDistance ?? 0),
+                        _statusRow(
+                          color: Colors.amberAccent,
+                          label: "Goal Reached",
+                          value: data?.goalReached ?? false,
+                        ),
+                        // _statusRow2(color: Colors.amberAccent, label: "Goal",
+                        //     value: data?.goal ?? 0),
+                        // _statusRow2(color: Colors.amberAccent, label: "Goal Dist",
+                        //     value: data?.goalDistance ?? 0),
                         // _statusRow2(color: Colors.amberAccent, label: "Path Points",
                         //     value: data?.pathPoints ?? 0),
                       ],
@@ -356,14 +717,12 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                       crossAxisSpacing: 6,
                       childAspectRatio: 1.6,
                       children: [
-                        _metricCard("X",   data?.robotPose?.x ?? 0, ""),
-                        _metricCard("Y",   data?.robotPose?.y ?? 0,  ""),
-                        _metricCard("Yaw",  data?.robotPose?.yawDeg ?? 0, ""),
+                        _metricCard("X", data?.robotPose?.x ?? 0, ""),
+                        _metricCard("Y", data?.robotPose?.y ?? 0, ""),
+                        _metricCard("Yaw", data?.robotPose?.yawDeg ?? 0, ""),
                       ],
                     ),
                   ),
-
-
 
                   const SizedBox(height: 16),
                 ],
@@ -376,7 +735,6 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
   }
 
   // BUILD
-
 
   @override
   Widget build(BuildContext context) {
@@ -426,7 +784,10 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                   // const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () {
-                      setState(() { _isLoading = true; _hasError = false; });
+                      setState(() {
+                        _isLoading = true;
+                        _hasError = false;
+                      });
                       _webViewController.reload();
                     },
                     icon: const Icon(Icons.refresh),
@@ -455,8 +816,12 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                 heroTag: "resetZoom",
                 mini: true,
                 backgroundColor: Colors.black54,
-                onPressed: () => _transformationController.value = Matrix4.identity(),
-                child: const Icon(Icons.center_focus_strong, color: Colors.white),
+                onPressed: () =>
+                    _transformationController.value = Matrix4.identity(),
+                child: const Icon(
+                  Icons.center_focus_strong,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -482,10 +847,15 @@ Widget _statusSection({required String title, required Widget child}) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w500,
-                color: Colors.white, letterSpacing: 1.0)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+            letterSpacing: 1.0,
+          ),
+        ),
         const SizedBox(height: 8),
         child,
       ],
@@ -504,39 +874,62 @@ Widget _statusRow({
     child: Row(
       children: [
         Container(
-          width: 7, height: 7,
+          width: 7,
+          height: 7,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 4)],
+            boxShadow: [
+              BoxShadow(color: color.withOpacity(0.5), blurRadius: 4),
+            ],
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(label,
-              style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.65))),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.65),
+            ),
+          ),
         ),
         if (isModeBadge)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.blueAccent.withOpacity(0.15),
-              border: Border.all(color: Colors.blueAccent.withOpacity(0.35), width: 0.5),
+              border: Border.all(
+                color: Colors.blueAccent.withOpacity(0.35),
+                width: 0.5,
+              ),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(value ? "True" : "False",
-                style: const TextStyle(
-                    fontSize: 9, fontWeight: FontWeight.w500,
-                    color: Colors.lightBlueAccent, letterSpacing: 0.5)),
+            child: Text(
+              value ? "True" : "False",
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                color: Colors.lightBlueAccent,
+                letterSpacing: 0.5,
+              ),
+            ),
           )
         else
-          Text(value ? "True" : "False",
-              style: const TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white)),
+          Text(
+            value ? "True" : "False",
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
       ],
     ),
   );
-}Widget _statusRow2({
+}
+
+Widget _statusRow2({
   required Color color,
   required String label,
   required double value,
@@ -547,24 +940,35 @@ Widget _statusRow({
     child: Row(
       children: [
         Container(
-          width: 7, height: 7,
+          width: 7,
+          height: 7,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 4)],
+            boxShadow: [
+              BoxShadow(color: color.withOpacity(0.5), blurRadius: 4),
+            ],
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(label,
-              style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.65))),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.65),
+            ),
+          ),
         ),
         if (isModeBadge)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.blueAccent.withOpacity(0.15),
-              border: Border.all(color: Colors.blueAccent.withOpacity(0.35), width: 0.5),
+              border: Border.all(
+                color: Colors.blueAccent.withOpacity(0.35),
+                width: 0.5,
+              ),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -586,7 +990,7 @@ Widget _statusRow({
               color: Colors.lightBlueAccent,
               letterSpacing: 0.5,
             ),
-          )
+          ),
       ],
     ),
   );
@@ -603,19 +1007,33 @@ Widget _metricCard(String name, double val, String unit) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name,
-            style: TextStyle(
-                fontSize: 14, color: Colors.white.withOpacity(0.38), letterSpacing: 0.5)),
+        Text(
+          name,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white.withOpacity(0.38),
+            letterSpacing: 0.5,
+          ),
+        ),
         const SizedBox(height: 3),
         RichText(
           text: TextSpan(
             children: [
-
-              TextSpan(text:  val.toDouble().toString(),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white)),
-              TextSpan(text: " $unit",
-                  style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.45))),
+              TextSpan(
+                text: val.toDouble().toString(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+              TextSpan(
+                text: " $unit",
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withOpacity(0.45),
+                ),
+              ),
             ],
           ),
         ),
@@ -632,11 +1050,21 @@ Widget _barRow(String label, double value, Color color) {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label,
-                style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.55))),
-            Text("${(value * 100).toInt()}%",
-                style: const TextStyle(
-                    fontSize: 10, fontWeight: FontWeight.w500, color: Colors.white)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withOpacity(0.55),
+              ),
+            ),
+            Text(
+              "${(value * 100).toInt()}%",
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -654,4 +1082,465 @@ Widget _barRow(String label, double value, Color color) {
   );
 }
 
+void showPoiManagerDialog(BuildContext context) {
+  showDialog(context: context, builder: (_) => const _PoiDialog());
+}
 
+class _PoiDialog extends StatelessWidget {
+  const _PoiDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<PoiController>();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Text(
+                    "POI LIST",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            // LIST
+            Flexible(
+              child: Obx(() {
+                if (ctrl.isLoading.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                final list = ctrl.PoiData.value?.pois ?? [];
+
+                if (list.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text("No POIs found"),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: list.length,
+                  itemBuilder: (_, i) {
+                    final p = list[i];
+                    return _PoiItem(p: p, ctrl: ctrl);
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PoiItem extends StatelessWidget {
+  final Pois p;
+  final PoiController ctrl;
+
+  const _PoiItem({required this.p, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      elevation: 1,
+      child: ListTile(
+        dense: true,
+        title: Text(
+          p.name ?? '',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          "x: ${p.x}   y: ${p.y}   yaw: ${p.yawDeg}",
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // navigate
+            IconButton(
+              icon: const Icon(Icons.navigation, size: 18, color: Colors.green),
+              onPressed: () async {
+                final resp = await ApiServices.navigate(id: p.id ?? 0);
+                if (resp['success'] == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 20,
+                      ),
+                      content: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Navigation Activated",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 20,
+                      ),
+                      content: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Error",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            // EDIT
+            IconButton(
+              icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+              onPressed: () => _showEditDialog(context, p, ctrl),
+            ),
+
+            // DELETE
+            IconButton(
+              icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+              onPressed: () async {
+                final resp = await ApiServices.delete(p.id ?? 0);
+                if (resp['success'] == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 20,
+                      ),
+                      content: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Map Deleted Successfully",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                  Get.find<PoiController>().PoiDataz();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 20,
+                      ),
+                      content: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                "Error",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showEditDialog(BuildContext context, Pois p, PoiController ctrl) {
+  final name = TextEditingController(text: p.name);
+  final x = TextEditingController(text: p.x?.toString());
+  final y = TextEditingController(text: p.y?.toString());
+  final yaw = TextEditingController(text: p.yawDeg?.toString());
+
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text("Edit POI"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: name,
+            decoration: const InputDecoration(labelText: "Name"),
+          ),
+          TextField(
+            controller: x,
+            decoration: const InputDecoration(labelText: "X"),
+            keyboardType: TextInputType.number,
+          ),
+          TextField(
+            controller: y,
+            decoration: const InputDecoration(labelText: "Y"),
+            keyboardType: TextInputType.number,
+          ),
+          TextField(
+            controller: yaw,
+            decoration: const InputDecoration(labelText: "Yaw"),
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            editdata(
+              name.text,
+              double.tryParse(x.text) ?? 0.0,
+              double.tryParse(y.text) ?? 0.0,
+              double.tryParse(yaw.text) ?? 0.0,
+              p.id ?? 0,
+              // id
+              "Map Updated Successfully",
+              // success message
+              context, // context (IMPORTANT)
+            );
+          },
+          child: Text("Update"),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> editdata(
+  String name,
+  double x,
+  double y,
+  double yaw,
+  int id,
+  String successMsg,
+  BuildContext context,
+) async {
+  try {
+    final resp = await ApiServices.editPoi(
+      name: name,
+      x: x,
+      y: y,
+      yaw: yaw,
+      id: id,
+    );
+
+    if (resp['success'] == true) {
+      _showSnackBar(
+        context,
+        message: successMsg,
+        color: Colors.green,
+        icon: Icons.check_circle,
+      );
+
+      Get.find<PoiController>().PoiDataz();
+    } else {
+      _showSnackBar(
+        context,
+        message: resp['message'] ?? "Something went wrong",
+        color: Colors.red,
+        icon: Icons.error,
+      );
+    }
+  } catch (e) {
+    _showSnackBar(
+      context,
+      message: "Error: ${e.toString()}",
+      color: Colors.red,
+      icon: Icons.error,
+    );
+  }
+}
+
+void _showSnackBar(
+  BuildContext context, {
+  required String message,
+  required Color color,
+  required IconData icon,
+}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+      content: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
