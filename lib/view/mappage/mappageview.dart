@@ -5,7 +5,10 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../service/ApiService.dart';
+import '../../utils/customWidget.dart';
+import '../../utils/popups.dart';
 import '../maplistpage/maplistpage.dart';
+import '../settingspage/Controller/CurrentConfigController.dart';
 import '../settingspage/settingspage.dart';
 import 'Controller/poiController.dart';
 import 'Controller/robotDetailsController.dart';
@@ -21,9 +24,9 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    CameraStreamPage(),
-    MapScreen(),
+  final List<Widget> _pages = [
+    const CameraStreamPage(),
+    const MapScreen(),
     SettingsScreen(),
   ];
 
@@ -68,6 +71,7 @@ class CameraStreamPage extends StatefulWidget {
 
 class _CameraStreamPageState extends State<CameraStreamPage> {
   final String streamUrl = 'http://192.168.1.199:5000/stream';
+  final CurrentConfigController controller = Get.find();
 
   late final WebViewController _webViewController;
   bool isExpanded = false;
@@ -119,7 +123,9 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
             _isLoading = true;
             _hasError = false;
           }),
+
           onPageFinished: (_) => setState(() => _isLoading = false),
+
           onWebResourceError: (error) {
             setState(() {
               _isLoading = false;
@@ -306,11 +312,23 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                       "Stop All",
                       () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
                     ),
-                    _buildControlButton(
-                      Icons.save,
-                      "Save",
-                      () => _callApi("save_map", "MAP SAVED"),
-                    ),
+                    _buildControlButton(Icons.save, "Save", () {
+                      showMapNameDialog(context, (mapName) async{
+                        print("Map Name: $mapName");
+                      await   _callApi("save_map", "MAP SAVED");
+                       await ApiServices.mapName(name: mapName);
+                        // 👉 Call API here
+                      });
+                      // Get.dialog(
+                      //   MapNameDialog(
+                      //     onSubmit: (mapName) {
+                      //       _callApi("save_map", "MAP SAVED");
+                      //       // 👉 call your API here
+                      //       // ApiServices.createMap(mapName);
+                      //     },
+                      //   ),
+                      // );
+                    }),
                     _buildControlButton(Icons.navigation, "POI", () async {
                       var data = await ApiServices.currentValue();
 
@@ -337,8 +355,8 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                                 ).viewInsets.bottom, // ✅ keyboard safe
                               ),
                               child: Container(
-                                width: 500,
-                                padding: const EdgeInsets.all(20),
+                                width: MediaQuery.of(context).size.width * 0.55,
+                                  padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
@@ -516,103 +534,225 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     //
                     _buildSectionLabel("EMERGENCY"),
 
-                    _buildControlButton(Icons.warning_amber, "Alert", () async {
-                      final resp = await ApiServices.emergency(name: true);
-                      if (resp['success'] == true) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 50,
-                              vertical: 20,
-                            ),
-                            content: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 14,
+                    _buildControlButton(
+                      Icons.warning_amber,
+                      "Emergency ON",
+                      () async {
+                        final resp = await ApiServices.emergency(name: true);
+                        if (resp['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 50,
+                                vertical: 20,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 6,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Colors.white),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      "Emergency Button Pressed",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                              content: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Emergency Button Pressed",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                        Get.find<PoiController>().PoiDataz();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 50,
-                              vertical: 20,
-                            ),
-                            content: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 14,
+                          );
+                          Get.find<PoiController>().PoiDataz();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 50,
+                                vertical: 20,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 6,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.error, color: Colors.white),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      "Error",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                              content: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.white),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Error",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
+                          );
+                        }
+                      },
+                    ),
+                    _buildControlButton(
+                      Icons.warning_amber,
+                      "Emergency OFF",
+                      () async {
+                        final resp = await ApiServices.emergency(name: false);
+                        if (resp['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 50,
+                                vertical: 20,
+                              ),
+                              content: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Emergency Button Pressed",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                          Get.find<PoiController>().PoiDataz();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 50,
+                                vertical: 20,
+                              ),
+                              content: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.white),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Error",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    _buildControlButton(Icons.speed, "Speed", () async {
+                      // ✅ add async
+                      if (controller.currentConfigData.value == null) {
+                        await controller.currentConfigDataz();
+                      }
+                      if (context.mounted) {
+                        showRpmDialog(context);
                       }
                     }),
-                    // _buildControlButton(Icons.restore, "Recover", () {}),
-                    // _buildControlButton(Icons.place, "POI", () {}),
+                    _buildControlButton(Icons.mode, "mode", () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const ModeDialog(),
+                      );
+                    }),
                     //
                     // const Divider(color: Colors.white24, thickness: 2),
                     //
@@ -794,11 +934,11 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                           label: "Work Flow Running",
                           value: data?.workflowRunning ?? "No Data",
                         ),
-                        _statusRow2(
-                          color: Colors.cyan,
-                          label: "Work Flow Status",
-                          value: data?.workflowStatus ?? "No Data",
-                        ),
+                        // _statusRow2(
+                        //   color: Colors.cyan,
+                        //   label: "Work Flow Status",
+                        //   value: data?.workflowStatus ?? "No Data",
+                        // ),
                       ],
                     ),
                   ),
@@ -822,7 +962,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                           label: "Goal Distance",
                           value: data?.goalDistance ?? 0,
                         ),
-   _statusRow3(
+                        _statusRow3(
                           color: Colors.purpleAccent,
                           label: "Goal Distance",
                           value: data?.goalDistance ?? 0,
@@ -877,7 +1017,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
             scaleEnabled: true,
             minScale: 0.5,
             maxScale: 5.0,
-            child: WebViewWidget(controller: _webViewController),
+            child: WebViewWidget(controller: _webViewController,),
           ),
         ),
 
@@ -1292,7 +1432,7 @@ class _PoiDialog extends StatelessWidget {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
-        width: 420,
+        width: MediaQuery.of(context).size.width * 0.55,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

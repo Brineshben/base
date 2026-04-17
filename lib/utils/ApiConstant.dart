@@ -12,4 +12,11 @@ class ApiConstants {
   static String poiList = "/pois";
   static String currentValue = "/current_pose";
   static String emergency = "/emergency_stop";
+  static String currentConfig = "/current_config";
+  static String speed = "/max_rpm";
+  static String mode = "/mode";
+  static String mapName = "/map_name";
+  static String mapList = "/list_maps";
+  static String delete = "/delete_map";
+  static String rename = "/rename_map";
 }
