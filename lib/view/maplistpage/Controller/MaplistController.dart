@@ -18,7 +18,7 @@ class MapListController extends GetxController {
     isLoaded.value = false;
     try {
       Map<String, dynamic> resp = await ApiServices.mapList();
-      print("----talkToHuman-----$resp");
+      print("----talkToHumanseddf2wef-----$resp");
       if (resp['success'] == true) {
         mapListdata.value = MapListModel.fromJson(resp);
         mapList.value = mapListdata.value?.maps ?? [];

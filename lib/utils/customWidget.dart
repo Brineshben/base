@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import '../../../service/ApiService.dart';
 
 void showRpmDialog(BuildContext context) {
@@ -504,4 +506,104 @@ class _ModeDialogState extends State<ModeDialog> {
         return Icons.device_unknown;
     }
   }
+}
+Widget configCard({
+  required String title,
+  required String endpoint,
+  required bool isBool,
+  required BuildContext context,
+}) {
+  final TextEditingController controller = TextEditingController();
+  RxBool toggle = false.obs;
+
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade900,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.blue.withOpacity(0.2),
+          blurRadius: 10,
+        )
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+
+        const SizedBox(height: 10),
+
+        /// INPUT
+        isBool
+            ? Obx(() => Switch(
+          value: toggle.value,
+          activeColor: Colors.green,
+          onChanged: (val) => toggle.value = val,
+        ))
+            : TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: "Enter value",
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true,
+            fillColor: Colors.black,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        /// BUTTON
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () async {
+            dynamic value =
+            isBool ? toggle.value : double.tryParse(controller.text);
+print("valuvaluee$value");
+            if (!isBool && value == null) {
+              Get.snackbar("Error", "Enter valid number");
+              return;
+            }
+
+            bool success = await ApiServices.postData(
+              endpoint: endpoint,
+              value: value,
+            );
+            print("valuvaluee$success");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  success ? "Updated successfully" : "API Failed",
+                ),
+                backgroundColor: success ? Colors.green : Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+            // Get.showSnackbar(
+            //   GetSnackBar(
+            //     title: success ? "Success" : "Failed",
+            //     message: success ? "Updated successfully" : "API failed",
+            //     duration: const Duration(seconds: 2),
+            //     backgroundColor: success ? Colors.green : Colors.red,
+            //   ),
+            // );
+          },
+          child: const Text("SEND",style: TextStyle(color: Colors.white),),
+        )
+      ],
+    ),
+  );
 }

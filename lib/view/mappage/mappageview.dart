@@ -7,6 +7,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../service/ApiService.dart';
 import '../../utils/customWidget.dart';
 import '../../utils/popups.dart';
+import '../maplistpage/Controller/MaplistController.dart';
 import '../maplistpage/maplistpage.dart';
 import '../settingspage/Controller/CurrentConfigController.dart';
 import '../settingspage/settingspage.dart';
@@ -30,8 +31,20 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     SettingsScreen(),
   ];
 
-  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+  void _onItemTapped(int index) async {
+    setState(() => _selectedIndex = index);
 
+    switch (index) {
+      case 0:
+        break;
+      case 1:
+        await Get.find<MapListController>().mapListDataz();
+
+        break;
+      case 2:
+        break;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -283,52 +296,43 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     _buildControlButton(
                       Icons.play_circle_outlined,
                       "Start Mapping",
-                      () => _callApi("start_mapping", "MAPPING STARTED"),
-                    ),
+                          () => _callApi(
+                        "start_mapping_navigation",
+                        "MAP NAVIGATION STARTED",
+                      ),                    ),
                     _buildControlButton(
                       Icons.stop_circle,
                       "Stop Mapping",
                       () => _callApi("stop_mapping", "MAPPING STOPPED"),
                     ),
-                    _buildControlButton(
-                      Icons.location_on_outlined,
-                      "Map Navigate",
-                      () => _callApi(
-                        "start_mapping_navigation",
-                        "MAP NAVIGATION STARTED",
-                      ),
-                    ),
+                    _buildControlButton(Icons.mode, "mode", () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const ModeDialog(),
+                      );
+                    }),
+                    // _buildControlButton(
+                    //   Icons.location_on_outlined,
+                    //   "Map Navigate",
+                    //   () => _callApi(
+                    //     "start_mapping_navigation",
+                    //     "MAP NAVIGATION STARTED",
+                    //   ),
+                    // ),
                     _buildControlButton(
                       Icons.save,
                       "Nav Stack",
                       () => _callApi("start_nav_stack", "NAV STACK STARTED"),
                     ),
-
-                    const Divider(color: Colors.white24, thickness: 2),
-                    _buildSectionLabel("Mapping"),
-
                     _buildControlButton(
                       Icons.stop,
                       "Stop All",
-                      () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
+                          () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
                     ),
-                    _buildControlButton(Icons.save, "Save", () {
-                      showMapNameDialog(context, (mapName) async{
-                        print("Map Name: $mapName");
-                      await   _callApi("save_map", "MAP SAVED");
-                       await ApiServices.mapName(name: mapName);
-                        // 👉 Call API here
-                      });
-                      // Get.dialog(
-                      //   MapNameDialog(
-                      //     onSubmit: (mapName) {
-                      //       _callApi("save_map", "MAP SAVED");
-                      //       // 👉 call your API here
-                      //       // ApiServices.createMap(mapName);
-                      //     },
-                      //   ),
-                      // );
-                    }),
+                    const Divider(color: Colors.white24, thickness: 2),
+                    _buildSectionLabel("Mapping"),
+
+
                     _buildControlButton(Icons.navigation, "POI", () async {
                       var data = await ApiServices.currentValue();
 
@@ -529,6 +533,23 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                         showPoiManagerDialog(context);
                       },
                     ),
+                    _buildControlButton(Icons.save, "Save", () {
+                      showMapNameDialog(context, (mapName) async{
+                        print("Map Name: $mapName");
+                        await   _callApi("save_map", "MAP SAVED");
+                        await ApiServices.mapName(name: mapName);
+                        // 👉 Call API here
+                      });
+                      // Get.dialog(
+                      //   MapNameDialog(
+                      //     onSubmit: (mapName) {
+                      //       _callApi("save_map", "MAP SAVED");
+                      //       // 👉 call your API here
+                      //       // ApiServices.createMap(mapName);
+                      //     },
+                      //   ),
+                      // );
+                    }),
 
                     const Divider(color: Colors.white24, thickness: 2),
                     //

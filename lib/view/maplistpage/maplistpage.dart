@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../service/ApiService.dart';
 import 'Controller/MaplistController.dart';
 
@@ -12,15 +14,40 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
 
-  /// ✅ Define controller
   final MapListController controller = Get.find<MapListController>();
+
+  /// ✅ Selected Map ID (important)
+  int? selectedMapId;
 
   @override
   void initState() {
     super.initState();
-
-    /// ✅ Call API once
     controller.mapListDataz();
+  }
+
+  /// ✅ Save selection
+  Future<void> saveSelectedMap(String name, int id) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    /// remove old
+    await prefs.remove('map_name');
+    await prefs.remove('map_id');
+
+    /// save new
+    await prefs.setString('map_name', name);
+    await prefs.setInt('map_id', id);
+  }
+
+  /// ✅ Load selection
+  Future<void> loadSelectedMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getInt('map_id');
+
+    if (savedId != null) {
+      setState(() {
+        selectedMapId = savedId;
+      });
+    }
   }
 
   @override
@@ -28,10 +55,11 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("MAP LIST",style: TextStyle(color: Colors.white),),
+        title: const Text("MAP LIST", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
       ),
       body: Obx(() {
+
         /// 🔄 Loading
         if (controller.isLoading.value) {
           return const Center(
@@ -42,26 +70,28 @@ class _MapScreenState extends State<MapScreen> {
         /// ❌ Error
         if (controller.isError.value) {
           return const Center(
-            child: Text(
-              "Failed to load maps",
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text("Failed to load maps",
+                style: TextStyle(color: Colors.red)),
           );
         }
 
         /// 📭 Empty
         if (controller.mapList.isEmpty) {
           return const Center(
-            child: Text(
-              "No Maps Available",
-              style: TextStyle(color: Colors.white),
-            ),
+            child: Text("No Maps Available",
+                style: TextStyle(color: Colors.white)),
           );
         }
 
-        /// ✅ Grid UI
+        /// ✅ Load saved selection AFTER data arrives
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (selectedMapId == null) {
+            loadSelectedMap();
+          }
+        });
+
         return Padding(
-          padding: const EdgeInsets.only(left: 50,right: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 50),
           child: GridView.builder(
             itemCount: controller.mapList.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -70,28 +100,55 @@ class _MapScreenState extends State<MapScreen> {
               crossAxisSpacing: 12,
               childAspectRatio: 1.1,
             ),
-              itemBuilder: (context, index) {
-                final map = controller.mapList[index];
+            itemBuilder: (context, index) {
+              final map = controller.mapList[index];
 
-                return Container(
+              /// 🔥 Check selected
+              final isSelected = selectedMapId == map.id;
+
+              return GestureDetector(
+                onTap: () async {
+                  setState(() {
+                    selectedMapId = map.id;
+                  });
+
+                  await saveSelectedMap(
+                    map.mapName ?? "",
+                    map.id ?? 0,
+                  );
+
+                  print("Selected ${map.mapName}");
+                },
+                child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blueGrey.shade900,
-                        Colors.black,
-                      ],
+
+                    /// 🔥 Highlight
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.greenAccent
+                          : Colors.transparent,
+                      width: 2,
                     ),
+
+                    gradient: LinearGradient(
+                      colors: isSelected
+                          ? [Colors.green.shade700, Colors.black]
+                          : [Colors.blueGrey.shade900, Colors.black],
+                    ),
+
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blueAccent.withOpacity(0.3),
-                        blurRadius: 10,
+                        color: isSelected
+                            ? Colors.greenAccent.withOpacity(0.5)
+                            : Colors.blueAccent.withOpacity(0.3),
+                        blurRadius: 12,
                       )
                     ],
                   ),
                   child: Stack(
                     children: [
-                      /// Background icon
+
                       Positioned(
                         right: -10,
                         bottom: -10,
@@ -108,113 +165,47 @@ class _MapScreenState extends State<MapScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
 
-                            /// 🔹 Top Row (Edit + Delete)
+                            /// Delete
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.white),
-                                  onPressed: () {
-                                    print("Edit ${map.mapName}");
-                                  },
-                                ),
-                                IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: ()async {
-                                    final resp = await ApiServices.deleteMap(value: map.mapName ?? "", id: map.id ?? 0);
+                                  onPressed: () async {
+                                    final resp = await ApiServices.deleteMap(
+                                      value: map.mapName ?? "",
+                                      id: map.id ?? 0,
+                                    );
+
                                     if (resp['success'] == true) {
+
+                                      /// 🔥 If deleted selected item → clear pref
+                                      if (selectedMapId == map.id) {
+                                        final prefs = await SharedPreferences.getInstance();
+                                        await prefs.remove('map_name');
+                                        await prefs.remove('map_id');
+
+                                        setState(() {
+                                          selectedMapId = null;
+                                        });
+                                      }
+
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: Colors.transparent,
-                                          elevation: 0,
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 50,
-                                            vertical: 20,
-                                          ),
-                                          content: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 14,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              borderRadius: BorderRadius.circular(14),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                  color: Colors.black26,
-                                                  blurRadius: 6,
-                                                  offset: Offset(0, 3),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.check_circle, color: Colors.white),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    "Map Deleted Successfully",
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                        const SnackBar(
+                                          content: Text("Map Deleted Successfully"),
+                                          backgroundColor: Colors.green,
                                         ),
                                       );
-                                      Get.find<MapListController>().mapListDataz();
+
+                                      controller.mapListDataz();
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          behavior: SnackBarBehavior.floating,
-                                          backgroundColor: Colors.transparent,
-                                          elevation: 0,
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 50,
-                                            vertical: 20,
-                                          ),
-                                          content: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 14,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius: BorderRadius.circular(14),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                  color: Colors.black26,
-                                                  blurRadius: 6,
-                                                  offset: Offset(0, 3),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.error, color: Colors.white),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    "Error",
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                        const SnackBar(
+                                          content: Text("Error"),
+                                          backgroundColor: Colors.red,
                                         ),
                                       );
                                     }
-                                    print("Delete ${map.mapName}");
                                   },
                                 ),
                               ],
@@ -222,7 +213,7 @@ class _MapScreenState extends State<MapScreen> {
 
                             const Spacer(),
 
-                            /// 📌 Map Name
+                            /// Name
                             Text(
                               map.mapName ?? "Unknown",
                               style: const TextStyle(
@@ -244,74 +235,51 @@ class _MapScreenState extends State<MapScreen> {
 
                             const SizedBox(height: 8),
 
-                            /// 🔥 Buttons Row
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-
-                                /// ✅ Select
-                                // ElevatedButton(
-                                //   style: ElevatedButton.styleFrom(
-                                //     backgroundColor: Colors.green,
-                                //     padding: const EdgeInsets.symmetric(horizontal: 8),
-                                //   ),
-                                //   onPressed: () {
-                                //     print("Selected ${map.mapName}");
-                                //   },
-                                //   child: const Text("Select", style: TextStyle(fontSize: 10)),
-                                // ),
-
-                                /// ✏️ Rename
-                                GestureDetector(
-                                  onTap: () {
-                                    _showRenameDialog(context, map);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      gradient: const LinearGradient(
-                                        colors: [Color(0xFFFFA726), Color(0xFFFF7043)],
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.orange.withOpacity(0.4),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        )
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.edit, size: 14, color: Colors.white),
-                                        SizedBox(width: 5),
-                                        Text(
-                                          "Rename",
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                            /// Rename
+                            GestureDetector(
+                              onTap: () {
+                                _showRenameDialog(context, map);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFFA726), Color(0xFFFF7043)],
                                   ),
-                                )
-                              ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.edit, size: 14, color: Colors.white),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      "Rename",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             )
                           ],
                         ),
                       ),
                     ],
                   ),
-                );
-              }          ),
+                ),
+              );
+            },
+          ),
         );
       }),
     );
   }
 }
+
+/// Rename Dialog (same as yours)
 void _showRenameDialog(BuildContext context, map) {
   TextEditingController controller =
   TextEditingController(text: map.mapName);
@@ -326,10 +294,6 @@ void _showRenameDialog(BuildContext context, map) {
         content: TextField(
           controller: controller,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: "Enter new name",
-            hintStyle: TextStyle(color: Colors.grey),
-          ),
         ),
         actions: [
           TextButton(
@@ -337,102 +301,13 @@ void _showRenameDialog(BuildContext context, map) {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: ()async {
-              final resp = await ApiServices.renameMap(value: controller.text ?? "", id: map.id ?? 0);
-              if (resp['success'] == true) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 50,
-                      vertical: 20,
-                    ),
-                    content: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              "Map Deleted Successfully",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-                Get.find<MapListController>().mapListDataz();
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 50,
-                      vertical: 20,
-                    ),
-                    content: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 6,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              "Error",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-              Navigator.of(context).pop();
-              print("Delete ${map.mapName}");
+            onPressed: () async {
+              await ApiServices.renameMap(
+                value: controller.text,
+                id: map.id ?? 0,
+              );
+              Navigator.pop(context);
+              Get.find<MapListController>().mapListDataz();
             },
             child: const Text("Save"),
           )

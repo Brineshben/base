@@ -22,6 +22,8 @@ class CurrentConfigController extends GetxController {
       Map<String, dynamic> resp = await ApiServices.currentConfig();
       AppLogger.log("----robotMapDataz---$resp");
       if (resp['success'] == true) {
+        AppLogger.log("----hgduhweuhfwefuhgwef-");
+
         currentConfigData.value = CurrentConfigModel.fromJson(resp);
         AppLogger.log("Nav State: ${currentConfigData.value?.ageS}");
 
