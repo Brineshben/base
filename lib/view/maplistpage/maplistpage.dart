@@ -49,7 +49,10 @@ class _MapScreenState extends State<MapScreen> {
       });
     }
   }
-
+  Future<void> _callApi(String value, String successMsg) async {
+    final resp = await ApiServices.mapService(value: value);
+    _showSnack(context ,resp['success'] == true, successMsg);
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,6 +119,7 @@ class _MapScreenState extends State<MapScreen> {
                     map.mapName ?? "",
                     map.id ?? 0,
                   );
+                  await _callApi("start_nav_stack", "Map Uploaded");
 
                   print("Selected ${map.mapName}");
                 },
@@ -277,6 +281,49 @@ class _MapScreenState extends State<MapScreen> {
       }),
     );
   }
+}
+void _showSnack(BuildContext context,bool success, String successMsg) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+      content: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: success ? Colors.green : Colors.red,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                success ? successMsg : "ERROR",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Rename Dialog (same as yours)

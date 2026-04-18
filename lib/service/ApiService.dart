@@ -399,9 +399,26 @@ class ApiServices {
   }
 
   ///add POi
-  static Future<Map<String, dynamic>> navigate({required int id}) async {
-    String url = "${ApiConstants.baseURL}/pois/$id/navigate";
-    print("Url....$url");
+  static Future<Map<String, dynamic>> navigate({required int ids}) async {
+    final robotData = await robotdetails();
+
+    // bool isMapReady =
+    //     robotData["workflow_mode"]?.toString() == "mapping_navigation" ||
+    //         robotData["workflow_mode"]?.toString() == "mapping";
+    // print("MAP READY 👉 $isMapReady");
+
+    /// 🔹 Step 2: Get saved data
+    final prefs = await SharedPreferences.getInstance();
+    final int? id = prefs.getInt('map_id');
+    final String? name = prefs.getString('map_name');
+    if (id == null || name == null) {
+      throw Exception("Map ID or Name not found in SharedPreferences");
+    }
+
+    /// 🔹 Step 3: Build URL based on condition
+
+    String url = "${ApiConstants.baseURL}/pois/$ids/navigate?id=$id&map_name=$name";
+    print("Urldcgsrf....$url");
 
     try {
       var request = http.Request('POST', Uri.parse(url));

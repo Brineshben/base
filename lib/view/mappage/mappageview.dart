@@ -319,11 +319,11 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     //     "MAP NAVIGATION STARTED",
                     //   ),
                     // ),
-                    _buildControlButton(
-                      Icons.save,
-                      "Nav Stack",
-                      () => _callApi("start_nav_stack", "NAV STACK STARTED"),
-                    ),
+                    // _buildControlButton(
+                    //   Icons.save,
+                    //   "Nav Stack",
+                    //   () => _callApi("start_nav_stack", "NAV STACK STARTED"),
+                    // ),
                     _buildControlButton(
                       Icons.stop,
                       "Stop All",
@@ -1544,7 +1544,7 @@ class _PoiItem extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.navigation, size: 18, color: Colors.green),
               onPressed: () async {
-                final resp = await ApiServices.navigate(id: p.id ?? 0);
+                final resp = await ApiServices.navigate(ids: p.id ?? 0);
                 if (resp['success'] == true) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
