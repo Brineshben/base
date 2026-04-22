@@ -140,6 +140,22 @@ class ApiServices {
       throw Exception("Service Error Login Api");
     }
   }
+  ///battery
+  static Future<Map<String, dynamic>> battery() async {
+    String url = "${ApiConstants.baseURL}${ApiConstants.battery}";
+    print("Url.currentValue...$url");
+    try {
+      var request = http.Request('GET', Uri.parse(url));
+      request.headers.addAll({'Content-Type': 'application/json'});
+      http.StreamedResponse response = await request.send();
+
+      var respString = await response.stream.bytesToString();
+      print("Url.currentValue..$respString");
+      return json.decode(respString);
+    } catch (e) {
+      throw Exception("Service Error Login Api");
+    }
+  }
 
   ///speed post
   static Future<Map<String, dynamic>> speedPost({required String value}) async {

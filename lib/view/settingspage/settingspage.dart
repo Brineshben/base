@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../mappage/Controller/batteryController.dart';
 import 'Controller/CurrentConfigController.dart';
 import 'MotorConfigurations.dart';
 import 'otpPage.dart';
@@ -7,12 +8,12 @@ import 'otpPage.dart';
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});
 
-  final CurrentConfigController controller =
-  Get.put(CurrentConfigController());
+  final batteryController controller =
+  Get.put(batteryController());
 
   @override
   Widget build(BuildContext context) {
-    controller.currentConfigDataz();
+    controller.batteryDataz();
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -22,9 +23,6 @@ class SettingsScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
 
         if (controller.isError.value) {
           return const Center(
@@ -33,7 +31,7 @@ class SettingsScreen extends StatelessWidget {
           );
         }
 
-        final data = controller.currentConfigData.value;
+        final data = controller.batteryData.value;
 
         if (data == null) {
           return const Center(
@@ -41,37 +39,27 @@ class SettingsScreen extends StatelessWidget {
           );
         }
 
-        final config = data.config;
+        final config = data.bmsData;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
 
-              /// AGE CARD
+              // /// AGE CARD
               _buildCard(
-                title: "System Age",
-                value: "${data.ageS} sec",
+                title: "current",
+                value: "${config?.current} Ah",
                 icon: Icons.timer,
                 color: Colors.blue,
               ),
 
               const SizedBox(height: 12),
 
-              /// MODE CARD
-              _buildCard(
-                title: "Mode",
-                value: _getMode(config?.mode ?? 0),
-                icon: Icons.settings,
-                color: Colors.orange,
-              ),
-
-              const SizedBox(height: 12),
-
               /// SPEED CARD
               _buildCard(
-                title: "Max Linear Velocity",
-                value: "${config?.maxLinearVelocity}",
+                title: "Full capacity",
+                value: "${config?.fullCapacity}",
                 icon: Icons.speed,
                 color: Colors.green,
               ),
@@ -80,33 +68,35 @@ class SettingsScreen extends StatelessWidget {
 
               /// RPM CARD
               _buildCard(
-                title: "Max RPM",
-                value: "${config?.maxRpm}",
+                title: "Remaining capacity",
+                value: "${config?.remainingCapacity}",
+                icon: Icons.rotate_right,
+                color: Colors.purple,
+              ),  const SizedBox(height: 12),
+
+              /// RPM CARD
+              _buildCard(
+                title: "voltage",
+                value: "${config?.voltage}",
                 icon: Icons.rotate_right,
                 color: Colors.purple,
               ),
 
               const SizedBox(height: 12),
 
-              /// BALANCE CARD
-              _buildCard(
-                title: "Balance Enabled",
-                value: (config?.balanceEnabled ?? false) ? "YES" : "NO",
-                icon: Icons.balance,
-                color: Colors.teal,
-              ),
 
-              const SizedBox(height: 12),
 
-              /// EMERGENCY STOP
-              _buildCard(
-                title: "Emergency Stop",
-                value: (config?.emergencyStopActive ?? false)
-                    ? "ACTIVE"
-                    : "OFF",
-                icon: Icons.warning,
-                color: Colors.red,
-              ), /// EMERGENCY STOP
+              // const SizedBox(height: 12),
+              //
+              // /// EMERGENCY STOP
+              // _buildCard(
+              //   title: "Emergency Stop",
+              //   value: (config?.emergencyStopActive ?? false)
+              //       ? "ACTIVE"
+              //       : "OFF",
+              //   icon: Icons.warning,
+              //   color: Colors.red,
+              // ), /// EMERGENCY STOP
               const SizedBox(height: 12),
 
               _buildClickableCard(

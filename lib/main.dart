@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tarabase/utils/Controller_handling.dart';
 import 'package:tarabase/view/mappage/mappageview.dart';
-void main() {
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-
+  // ✅ Force Landscape Mode
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   HandleControllers.createGetControllers();
 
   runApp(const RobotControlApp());

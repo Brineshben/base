@@ -19,4 +19,5 @@ class ApiConstants {
   static String mapList = "/list_maps";
   static String delete = "/delete_map";
   static String rename = "/rename_map";
+  static String battery = "/battery_data";
 }

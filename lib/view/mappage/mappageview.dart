@@ -8,9 +8,11 @@ import '../../service/ApiService.dart';
 import '../../utils/customWidget.dart';
 import '../../utils/popups.dart';
 import '../maplistpage/Controller/MaplistController.dart';
+import '../maplistpage/joystickWidget.dart';
 import '../maplistpage/maplistpage.dart';
 import '../settingspage/Controller/CurrentConfigController.dart';
 import '../settingspage/settingspage.dart';
+import 'Controller/batteryController.dart';
 import 'Controller/poiController.dart';
 import 'Controller/robotDetailsController.dart';
 import 'Model/poiModel.dart';
@@ -45,6 +47,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         break;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -68,6 +71,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             ),
           ],
         ),
+        // In your Scaffold
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: const RobotJoystick(),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       ),
     );
   }
@@ -108,6 +117,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
     messageTimer2 = Timer.periodic(const Duration(seconds: 2), (timer) {
       print("HomePage initialized");
       Get.find<RobotStatusController>().robotMapDataz();
+      Get.find<batteryController>().batteryDataz();
     });
     _initWebView();
   }
@@ -292,14 +302,15 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildSectionLabel("Navigations"),
+                    _buildSectionLabel("Mapping"),
                     _buildControlButton(
                       Icons.play_circle_outlined,
                       "Start Mapping",
-                          () => _callApi(
+                      () => _callApi(
                         "start_mapping_navigation",
                         "MAP NAVIGATION STARTED",
-                      ),                    ),
+                      ),
+                    ),
                     _buildControlButton(
                       Icons.stop_circle,
                       "Stop Mapping",
@@ -327,11 +338,8 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                     _buildControlButton(
                       Icons.stop,
                       "Stop All",
-                          () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
+                      () => _callApi("stop_all", "ALL NAVIGATION STOPPED"),
                     ),
-                    const Divider(color: Colors.white24, thickness: 2),
-                    _buildSectionLabel("Mapping"),
-
 
                     _buildControlButton(Icons.navigation, "POI", () async {
                       var data = await ApiServices.currentValue();
@@ -360,7 +368,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                               ),
                               child: Container(
                                 width: MediaQuery.of(context).size.width * 0.55,
-                                  padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
@@ -533,10 +541,10 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                         showPoiManagerDialog(context);
                       },
                     ),
-                    _buildControlButton(Icons.save, "Save", () {
-                      showMapNameDialog(context, (mapName) async{
+                    _buildControlButton(Icons.save, "Save Map", () {
+                      showMapNameDialog(context, (mapName) async {
                         print("Map Name: $mapName");
-                        await   _callApi("save_map", "MAP SAVED");
+                        await _callApi("save_map", "MAP SAVED");
                         await ApiServices.mapName(name: mapName);
                         // 👉 Call API here
                       });
@@ -768,12 +776,12 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                         showRpmDialog(context);
                       }
                     }),
-                    _buildControlButton(Icons.mode, "mode", () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => const ModeDialog(),
-                      );
-                    }),
+                    // _buildControlButton(Icons.mode, "mode", () {
+                    //   showDialog(
+                    //     context: context,
+                    //     builder: (_) => const ModeDialog(),
+                    //   );
+                    // }),
                     //
                     // const Divider(color: Colors.white24, thickness: 2),
                     //
@@ -908,13 +916,21 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  _statusSection(
-                    title: "SYSTEM",
-                    child: Column(
-                      children: [
-                        _barRow("Battery", _battery / 100, Colors.greenAccent),
-                      ],
-                    ),
+                  GetX(
+                    builder: (batteryController controller) {
+                      double soc =
+                          (controller.batteryData.value?.bmsData?.soc ?? 0.0)
+                              .toDouble();
+
+                      return _statusSection(
+                        title: "SYSTEM",
+                        child: Column(
+                          children: [
+                            _barRow("Battery", soc / 100, Colors.greenAccent),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   _statusSection(
                     title: "ROBOT STATUS",
@@ -930,16 +946,16 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                         //     value: data?.distanceTraveled ?? 0, isModeBadge: true),
                         // _statusRow(color: Colors.amberAccent, label: "Localized",
                         //     value: data?.l ?? false),
-                        _statusRow(
-                          color: Colors.amberAccent,
-                          label: "Map Ready",
-                          value: data?.mapReady ?? false,
-                        ),
-                        _statusRow(
-                          color: Colors.blueAccent,
-                          label: "Map Active",
-                          value: data?.mappingActive ?? false,
-                        ),
+                        // _statusRow(
+                        //   color: Colors.amberAccent,
+                        //   label: "Map Ready",
+                        //   value: data?.mapReady ?? false,
+                        // ),
+                        // _statusRow(
+                        //   color: Colors.blueAccent,
+                        //   label: "Map Active",
+                        //   value: data?.mappingActive ?? false,
+                        // ),
                         _statusRow2(
                           color: Colors.lightGreen,
                           label: "Navigation State",
@@ -950,11 +966,11 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
                           label: "Work Flow Mode",
                           value: data?.workflowMode ?? "No Data",
                         ),
-                        _statusRow2(
-                          color: Colors.teal,
-                          label: "Work Flow Running",
-                          value: data?.workflowRunning ?? "No Data",
-                        ),
+                        // _statusRow2(
+                        //   color: Colors.teal,
+                        //   label: "Work Flow Running",
+                        //   value: data?.workflowRunning ?? "No Data",
+                        // ),
                         // _statusRow2(
                         //   color: Colors.cyan,
                         //   label: "Work Flow Status",
@@ -1038,7 +1054,7 @@ class _CameraStreamPageState extends State<CameraStreamPage> {
             scaleEnabled: true,
             minScale: 0.5,
             maxScale: 5.0,
-            child: WebViewWidget(controller: _webViewController,),
+            child: WebViewWidget(controller: _webViewController),
           ),
         ),
 
@@ -1140,13 +1156,13 @@ Widget _statusSection({required String title, required Widget child}) {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.white,
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         child,
       ],
     ),
@@ -1367,7 +1383,7 @@ Widget _metricCard(String name, double val, String unit) {
         Text(
           name,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             color: Colors.white.withOpacity(0.38),
             letterSpacing: 0.5,
           ),
@@ -1379,7 +1395,7 @@ Widget _metricCard(String name, double val, String unit) {
               TextSpan(
                 text: val.toDouble().toString(),
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
                 ),
@@ -1387,7 +1403,7 @@ Widget _metricCard(String name, double val, String unit) {
               TextSpan(
                 text: " $unit",
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 7,
                   color: Colors.white.withOpacity(0.45),
                 ),
               ),
